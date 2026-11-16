@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-role="elder">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARE 青銀共創平台雛形</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one phone-width column. Sticky header, scrolling main, five-tab bar.
+     Every size is in rem, so the 樂齡版 scales the whole interface by 125%.
+     Single light theme on purpose: the project's own design principles for older
+     users call for dark text on a light ground. */
+  --outer:#D7E1DE;
+  --paper:#EEF3F1;
+  --surface:#FFFFFF;
+  --ink:#14302C;
+  --ink-2:#48605C;
+  --line:#CBD7D3;
+  --qing:#0E6F68;        /* 青: primary */
+  --qing-soft:#DCEEEB;
+  --shi:#C2410C;         /* 柿: the one call to action per screen */
+  --shi-soft:#FBE7DB;
+  --c:#0E6F68; --a:#C2410C; --r:#3B5BA9; --e:#8F5A00;   /* CARE stage colours */
+  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif;
+  --font-story:"LXGW WenKai TC","BiauKai","DFKai-SB","Noto Sans TC","Noto Sans CJK TC",serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+html{font-size:100%}
+html[data-role="elder"]{font-size:125%}
+body{background:var(--outer);color:var(--ink);font-family:var(--font-body);line-height:1.6;-webkit-text-size-adjust:100%}
+h1,h2,h3,p,ol,ul{margin:0}
+ol,ul{padding:0;list-style:none}
+h1{font-size:1.45rem;font-weight:900;line-height:1.3;text-wrap:balance}
+h2{font-size:1.12rem;font-weight:700;line-height:1.4}
+h3{font-size:1rem;font-weight:700}
+a{color:inherit}
+img{max-width:100%}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
+[hidden]{display:none!important}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+.app{height:100%;max-width:1320px;margin:0 auto;background:var(--paper);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top" "main" "tabs";position:relative;overflow:hidden}
+.top{grid-area:top;background:var(--qing);color:#fff;padding:.55rem 1rem;display:flex;align-items:center;gap:.75rem}
+.brand{font-weight:900;font-size:1.05rem;line-height:1.25;letter-spacing:.02em}
+.brand small{display:block;font-weight:500;font-size:.68rem;opacity:.9;letter-spacing:0}
+.seg{margin-left:auto;display:flex;background:rgba(255,255,255,.2);border-radius:999px;padding:3px;flex:none}
+.seg button{border:0;background:transparent;color:#fff;padding:.3rem .7rem;border-radius:999px;font-weight:700;font-size:.8rem;cursor:pointer;min-height:2.1rem}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--qing)}
+
+main{grid-area:main;min-height:0;overflow-y:auto;padding:1rem 1rem 5.6rem}
+.page{width:100%;max-width:42rem;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
+.page.wide{max-width:var(--page-wide,42rem)}
+.page>*{flex:none}
+.cols{display:grid;grid-template-columns:var(--cols,minmax(0,1fr));gap:1rem;align-items:start}
+.col{display:flex;flex-direction:column;gap:1rem;min-width:0}
+.col.stick{position:var(--stick,static);top:.5rem}
+.sheet-body>.cols{width:100%;max-width:var(--page-wide,42rem);margin:0 auto}
+.tabs{grid-area:tabs;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line)}
+.tabs a{display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.5rem .1rem .55rem;font-size:.72rem;font-weight:700;color:var(--ink-2);text-decoration:none;border-top:3px solid transparent;white-space:nowrap}
+.tabs a[aria-current="page"]{color:var(--qing);border-top-color:var(--qing)}
+.icon{width:1.4em;height:1.4em;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs .icon{width:1.6rem;height:1.6rem}
+
+.fab{position:absolute;right:.8rem;bottom:4.7rem;z-index:10;display:inline-flex;align-items:center;gap:.4rem;border:0;border-radius:999px;background:var(--ink);color:#fff;font-weight:700;font-size:.9rem;padding:.6rem 1rem .6rem .8rem;cursor:pointer;box-shadow:0 6px 18px rgba(20,48,44,.3)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem;display:flex;flex-direction:column;gap:.7rem}
+.row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.muted{color:var(--ink-2);font-size:.88rem}
+.tag{display:inline-block;align-self:flex-start;font-size:.72rem;font-weight:700;color:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:.05rem .45rem;background:var(--surface)}
+.hello{display:flex;flex-direction:column;gap:.3rem}
+.stage{display:inline-flex;align-items:center;gap:.4rem;align-self:flex-start;font-size:.74rem;font-weight:700;padding:.15rem .65rem .15rem .2rem;border-radius:999px;color:var(--stage);background:var(--surface);border:1.5px solid var(--stage)}
+.stage b{display:grid;place-items:center;width:1.35rem;height:1.35rem;border-radius:50%;background:var(--stage);color:#fff;font-weight:900}
+.head{display:flex;flex-direction:column;gap:.45rem}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding:.55rem 1.1rem;border-radius:12px;border:2px solid var(--qing);background:var(--qing);color:#fff;font-weight:700;font-size:1rem;cursor:pointer;text-decoration:none;text-align:center;line-height:1.3}
+.btn.accent{background:var(--shi);border-color:var(--shi)}
+.btn.ghost{background:var(--surface);color:var(--qing)}
+.btn.block{width:100%}
+.btn.sm{min-height:2.5rem;font-size:.9rem;padding:.35rem .8rem}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;min-height:2.6rem;padding:.35rem .9rem;border-radius:999px;border:2px solid var(--line);background:var(--surface);font-weight:700;font-size:.95rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--qing-soft);border-color:var(--qing);color:var(--qing)}
+.chip .icon{width:1.1em;height:1.1em;display:none}
+.chip[aria-pressed="true"] .icon{display:block}
+.kw{display:inline-block;font-size:.82rem;font-weight:700;color:var(--qing);background:var(--qing-soft);border-radius:6px;padding:.1rem .55rem}
+
+.next{border:2px solid var(--stage);gap:.6rem}
+.steps{display:flex;flex-direction:column;gap:.5rem}
+.steps a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.75rem;text-decoration:none;padding:.55rem .6rem;border-radius:12px;border:1px solid var(--line)}
+.letter{width:2.5rem;height:2.5rem;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:1.25rem;background:var(--stage)}
+.st-t b{display:block;line-height:1.3}
+.st-t small{display:block;color:var(--ink-2);font-size:.82rem;line-height:1.4}
+.ok{display:inline-flex;align-items:center;gap:.2rem;color:var(--qing);font-weight:700;font-size:.82rem;white-space:nowrap}
+.ok .icon{width:1.1em;height:1.1em;stroke-width:3}
+.nowtag{font-size:.78rem;font-weight:700;color:var(--shi);background:var(--shi-soft);border-radius:6px;padding:.1rem .5rem;white-space:nowrap}
+.count{font-size:.85rem;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.meter{height:.6rem;background:var(--line);border-radius:999px;overflow:hidden}
+.meter i{display:block;height:100%;width:var(--w);background:var(--qing);border-radius:999px}
+
+.tip{border-left:5px solid var(--r);background:#E9EEF9;border-radius:0 12px 12px 0;padding:.6rem .85rem;font-size:.92rem}
+.tip b{color:var(--r)}
+html[data-role="elder"] .y-only{display:none!important}
+html[data-role="youth"] .e-only{display:none!important}
+
+.person{display:grid;grid-template-columns:auto 1fr;gap:.8rem;align-items:start}
+.person .info{display:flex;flex-direction:column;gap:.45rem;min-width:0}
+.avatar{width:3rem;height:3rem;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.25rem;color:#fff;background:var(--qing);flex:none}
+.avatar.elder{background:#6B7F7B}
+.avatar.sm{width:2.1rem;height:2.1rem;font-size:.9rem}
+.pair{display:flex;align-items:center;justify-content:center;gap:.8rem;font-weight:900;font-size:1.1rem}
+.pair .x{color:var(--ink-2);font-weight:500}
+.who{display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.opts{display:flex;flex-direction:column;gap:.5rem}
+
+.photo{border-radius:10px;overflow:hidden;background:#E3DCCB;aspect-ratio:4/3;border:6px solid #fff;box-shadow:0 0 0 1px var(--line),0 6px 16px rgba(20,48,44,.12)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo.side{max-width:var(--side-photo,14rem)}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.thumbs button{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:.3rem;cursor:pointer;display:flex;flex-direction:column;gap:.2rem;font-weight:700;font-size:.85rem;align-items:center}
+.thumbs button[aria-pressed="true"]{border-color:var(--qing);background:var(--qing-soft)}
+.thumbs img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}
+.stepbar{display:flex;flex-direction:column;gap:.35rem}
+.stepbar .row b{font-size:1.05rem}
+
+.bubble{padding:.7rem .95rem;border-radius:14px;max-width:92%}
+.bubble.q{background:var(--qing-soft);border-bottom-left-radius:4px;font-weight:700;align-self:flex-start}
+.bubble.q.big{font-size:1.15rem;line-height:1.5}
+.bubble.a{background:var(--surface);border:1px solid var(--line);border-bottom-right-radius:4px;align-self:flex-end}
+.bubble.wait{display:inline-flex;gap:.5rem;align-items:center;color:var(--ink-2)}
+.talk{display:flex;flex-direction:column;gap:.5rem}
+.lbl{font-weight:700;font-size:.95rem}
+.field{width:100%;font-size:1rem;padding:.65rem .8rem;border:2px solid var(--line);border-radius:12px;background:var(--surface);resize:vertical;line-height:1.6}
+.field:focus{border-color:var(--qing);outline:none}
+.story{font-family:var(--font-story);font-size:1.15rem;line-height:1.9}
+p.story{white-space:pre-wrap}
+.mic{display:none}
+body.has-dict .mic{display:inline-flex}
+body.has-dict .nodict{display:none}
+.mic.on{background:var(--shi);border-color:var(--shi);color:#fff}
+.spk{display:none}
+body.has-tts .spk{display:inline-flex}
+.ai-only{display:none}
+body.has-ai .ai-only{display:flex;flex-direction:column;gap:.6rem}
+
+.cmp{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#E3DCCB;--pos:50%}
+.cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cmp .old{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.cmp .bar{position:absolute;top:0;bottom:0;left:var(--pos);width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 0 1px rgba(20,48,44,.35)}
+.cmp.fade .old{clip-path:none;opacity:calc(var(--n) / 100)}
+.cmp.fade .bar{display:none}
+.cmp span{position:absolute;bottom:.5rem;font-size:.78rem;font-weight:700;background:rgba(20,48,44,.82);color:#fff;border-radius:6px;padding:.05rem .5rem}
+.cmp .l{left:.5rem}.cmp .r{right:.5rem}
+input[type="range"]{width:100%;height:2.4rem;accent-color:var(--qing)}
+.cmpwrap{display:flex;flex-direction:column;gap:.4rem}
+
+.moods{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.moods button{display:flex;flex-direction:column;align-items:center;gap:.2rem;border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:.6rem .2rem;font-weight:700;cursor:pointer}
+.moods .icon{width:2.2rem;height:2.2rem}
+.moods button[aria-pressed="true"]{border-color:var(--r);background:#E9EEF9;color:var(--r)}
+.entry{display:grid;grid-template-columns:auto 1fr;gap:.7rem;padding:.7rem 0;border-top:1px solid var(--line)}
+.entry:first-of-type{border-top:0;padding-top:0}
+.entry .meta{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:.85rem;color:var(--ink-2)}
+.entry .meta b{color:var(--ink);font-size:.95rem}
+
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(5.6rem,1fr));gap:.6rem}
+.badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.15rem;font-size:.78rem;color:var(--ink-2);line-height:1.35}
+.badge .medal{width:3.2rem;height:3.2rem;border-radius:50%;display:grid;place-items:center;border:2px dashed var(--line);color:var(--line)}
+.badge b{font-size:.88rem;color:var(--ink-2)}
+.badge.got .medal{border:0;background:var(--e);color:#fff}
+.badge.got b{color:var(--ink)}
+.work{display:grid;grid-template-columns:6.2rem 1fr;gap:.8rem;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:.6rem;cursor:pointer;width:100%}
+.work img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block}
+.work .w-t{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.work b{font-size:1.02rem;line-height:1.35}
+.stat{display:inline-flex;align-items:center;gap:.25rem;font-size:.82rem;color:var(--ink-2);font-weight:700}
+.stat .icon{width:1.05em;height:1.05em}
+.list{display:flex;flex-direction:column;gap:.6rem}
+
+.sheet{position:absolute;inset:0;z-index:20;background:var(--paper);display:flex;justify-content:center}
+.panel{display:flex;flex-direction:column;width:100%;height:100%;min-width:0;background:var(--paper)}
+.sheet[hidden]{display:none}
+.sheet-top{flex:none;display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;background:var(--surface);border-bottom:1px solid var(--line)}
+.sheet-top h2{flex:1;min-width:0}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem}
+.sheet-body>*{flex:none}
+.sheet-foot{flex:none;padding:.7rem .8rem;background:var(--surface);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:.5rem}
+.send{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:end}
+.present .story{font-size:1.5rem}
+.present h1{font-size:1.9rem}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.tile{border:1px solid var(--line);border-radius:12px;padding:.6rem .8rem;background:var(--surface)}
+.tile b{display:block;font-size:1.7rem;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+.tile span{font-size:.82rem;color:var(--ink-2)}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;color:var(--ink-2);white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody td:first-child{white-space:nowrap;font-weight:700}
+.state{display:inline-flex;align-items:center;gap:.3rem;font-weight:700;font-size:.85rem}
+.dot{width:.6rem;height:.6rem;border-radius:50%;background:var(--line)}
+.dot.on{background:#1B8A4B}
+.foot{text-align:center;font-size:.85rem}
+.toast{position:absolute;left:50%;transform:translateX(-50%);width:calc(100% - 2rem);max-width:28rem;top:4.2rem;z-index:40;background:var(--ink);color:#fff;padding:.7rem 1rem;border-radius:12px;text-align:center;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.list.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))}
+@media (hover:hover){
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn.ghost:hover:not(:disabled){filter:none;background:var(--qing-soft)}
+  .chip:hover,.thumbs button:hover,.moods button:hover,.work:hover,.steps a:hover{border-color:var(--qing)}
+  .tabs a:hover{color:var(--qing)}
+}
+/* Responsive: one column on phones and upright tablets. Two columns from 860px in the
+   青年版 and from 1100px in the 樂齡版, whose type is 125% larger. */
+@media (min-width:860px){
+  html[data-role="youth"]{--cols:minmax(0,1.15fr) minmax(0,1fr);--page-wide:70rem;--stick:sticky;--side-photo:none}
+  main{padding:1.5rem 1.5rem 5.6rem}
+  .sheet{background:rgba(20,48,44,.55);padding:1.5rem;align-items:center}
+  .panel{max-width:64rem;height:auto;max-height:100%;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(20,48,44,.35)}
+  .panel-help{max-width:27rem;height:100%;margin-left:auto}
+  .panel-present{max-width:none;height:100%}
+}
+@media (min-width:1100px){
+  html[data-role="elder"]{--cols:minmax(0,1.15fr) minmax(0,1fr);--page-wide:70rem;--stick:sticky;--side-photo:none}
+}
+/* Laptop: the tab bar becomes a side rail. */
+@media (min-width:1024px){
+  .app{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"top top" "tabs main"}
+  .top{padding:.7rem 1.5rem}
+  .tabs{display:flex;flex-direction:column;gap:.35rem;padding:1rem .7rem;border-top:0;border-right:1px solid var(--line);min-width:10.5rem}
+  .tabs a{flex-direction:row;justify-content:flex-start;gap:.7rem;padding:.7rem .9rem;font-size:1rem;border-top:0;border-radius:12px}
+  .tabs a[aria-current="page"]{background:var(--qing-soft)}
+  .fab{bottom:1.2rem;right:1.4rem}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17.5 14.2c2.6.4 4 2.4 4 5"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M4 18l5.5-5.5 4 4 2.5-2.5 4 4"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L5 20v-4H4z"/><path d="M8.5 9.5h7M8.5 12.5h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3l2 5.5 5.5 2-5.5 2L11 18l-2-5.5-5.5-2 5.5-2z"/><path d="M19 15v5M16.5 17.5h5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+  <symbol id="i-f1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 9.5v.5M15.5 9.5v.5M7.5 13.5a4.7 4.7 0 0 0 9 0"/></symbol>
+  <symbol id="i-f2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 9.5v.5M15.5 9.5v.5M8.5 14.5c2 1.2 5 1.2 7 0"/></symbol>
+  <symbol id="i-f3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M7.5 10h2.5M14 10h2.5M9 15.5h6"/></symbol>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">CARE 青銀共創<small>互動平台雛形 v1.1</small></div>
+    <div class="seg" role="group" aria-label="切換版本">
+      <button type="button" id="role-elder" data-act="role" data-role="elder" aria-pressed="true">樂齡版</button>
+      <button type="button" id="role-youth" data-act="role" data-role="youth" aria-pressed="false">青年版</button>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="主要功能"></nav>
+  <main id="main"></main>
+  <button type="button" class="fab" id="fab" data-act="help"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg>小幫手</button>
+  <div class="sheet" id="sheet" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ic = n => `<svg class="icon" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const pad = n => String(n).padStart(2, '0');
+const clock = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); };
+const today = () => { const d = new Date(); return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate(); };
+
+/* ---------- demo data (all fictional) ---------- */
+const INTERESTS = [
+  {id:'cook', name:'烹飪料理'}, {id:'garden', name:'園藝種菜'}, {id:'craft', name:'手作工藝'}, {id:'music', name:'音樂歌謠'},
+  {id:'photo', name:'老照片攝影'}, {id:'history', name:'在地老故事'}, {id:'digital', name:'手機數位'}, {id:'travel', name:'旅遊踏青'}
+];
+const INAME = Object.fromEntries(INTERESTS.map(x => [x.id, x.name]));
+const TOPICS = {cook:'家傳拿手菜的故事', garden:'我的菜園四季', craft:'老手藝的記憶', music:'那些年唱的歌', photo:'老照片裡的那一天', history:'我家附近的老街', digital:'第一次用手機的趣事', travel:'最難忘的一趟遠門'};
+const PEOPLE = {
+  e1:{role:'elder', name:'阿嬌姨', age:72, intro:'拿手客家菜，喜歡種菜、聊以前的事', likes:['cook','garden','history'], mode:'offline'},
+  e2:{role:'elder', name:'正雄伯', age:75, intro:'做了四十年木工，最懂老街的故事', likes:['craft','history','photo','travel'], mode:'offline'},
+  e3:{role:'elder', name:'秋月阿嬤', age:68, intro:'愛唱老歌、會裁縫，陽台種滿了花', likes:['music','craft','garden'], mode:'online'},
+  y1:{role:'youth', name:'小安', age:21, intro:'資管系大三，會攝影和剪影片', likes:['photo','cook','digital'], mode:'offline'},
+  y2:{role:'youth', name:'阿哲', age:20, intro:'美術系大二，喜歡畫畫和聽老故事', likes:['craft','history','photo'], mode:'offline'},
+  y3:{role:'youth', name:'怡君', age:22, intro:'護理系大四，擅長教長輩用手機', likes:['digital','cook','music'], mode:'online'}
+};
+const P = id => PEOPLE[id] || {name:'', likes:[], role:'elder'};
+const FIRST_Q = '這張照片是什麼時候、在哪裡拍的？';
+const BANK = [FIRST_Q, '照片裡有誰？他們跟您是什麼關係？', '那時候的生活，跟現在最不一樣的是什麼？', '想到這張照片，您會想起什麼味道或聲音？'];
+const MOODS = [{id:'f1', name:'很開心'}, {id:'f2', name:'還不錯'}, {id:'f3', name:'有點累'}];
+const STAGE = {c:['C','Create 創造'], a:['A','Act 行動'], r:['R','Reflect 反思'], e:['E','Empower 培力']};
+const stageChip = k => `<span class="stage" style="--stage:var(--${k})"><b>${STAGE[k][0]}</b>${STAGE[k][1]}</span>`;
+
+/* Simple drawn scenes stand in for sample photos: remote images cannot load here. */
+function scene(kind, era){
+  const old = era !== 'now';
+  const o = old ? {sky:'#E9D9B5', sun:'#F6EBCB', far:'#C8AE7C', mid:'#A98755', dark:'#6B4F2C', road:'#B89868', hi:'#F3E6C8', acc:'#8A5A2B'}
+                : {sky:'#BFE4F5', sun:'#FFD25E', far:'#9CC7A1', mid:'#5FA777', dark:'#2F5D50', road:'#8D99A3', hi:'#FFFFFF', acc:'#D9541E'};
+  let b = '';
+  if (kind === 'street'){
+    b += `<rect width="400" height="300" fill="${o.sky}"/><circle cx="330" cy="50" r="24" fill="${o.sun}"/><rect y="214" width="400" height="86" fill="${o.road}"/>`;
+    const hs = old ? [112,128,104,120] : [176,150,190,160];
+    const cols = old ? ['#B58A56','#9C7446','#C29A68','#8E6A40'] : ['#F1D3B0','#D5E3EE','#F0B9AE','#E6E9EC'];
+    const signs = ['#D9541E','#0E6F68','#3B5BA9','#B8323A'];
+    [8,104,200,296].forEach((x, i) => {
+      const h = hs[i], y = 214 - h;
+      b += `<rect x="${x}" y="${y}" width="92" height="${h}" fill="${cols[i]}"/>`;
+      if (old) b += `<polygon points="${x-4},${y} ${x+46},${y-22} ${x+96},${y}" fill="${o.dark}"/>`;
+      else b += `<rect x="${x}" y="${y-6}" width="92" height="8" fill="${o.dark}"/><rect x="${x+8}" y="${y+h-80}" width="76" height="14" fill="${signs[i]}"/>`;
+      for (let r = 0; r < (old ? 1 : 2); r++){
+        const wy = y + 14 + r * 30;
+        b += `<rect x="${x+14}" y="${wy}" width="24" height="18" fill="${o.hi}" opacity=".85"/><rect x="${x+54}" y="${wy}" width="24" height="18" fill="${o.hi}" opacity=".85"/>`;
+      }
+      b += `<path d="M${x+18} 214v-34a28 28 0 0 1 56 0v34z" fill="${o.dark}" opacity="${old ? .8 : .55}"/>`;
+    });
+    if (old) b += `<g fill="none" stroke="${o.dark}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="150" cy="254" r="18"/><circle cx="212" cy="254" r="18"/><path d="M150 254l22-30h28l12 30M172 224l-6-10h-10M200 224l4-12h10"/></g>`;
+    else b += `<path d="M0 286h400" stroke="${o.hi}" stroke-width="4" stroke-dasharray="24 18"/><circle cx="150" cy="258" r="12" fill="${o.dark}"/><circle cx="214" cy="258" r="12" fill="${o.dark}"/><path d="M146 250h46l14-30h12l-6 30h8" fill="none" stroke="${o.acc}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  } else if (kind === 'kitchen'){
+    b += `<rect width="400" height="300" fill="${old ? '#E7D5B0' : '#EEF2F1'}"/><rect y="238" width="400" height="62" fill="${old ? '#A88558' : '#C9B79C'}"/>`;
+    b += `<rect x="252" y="36" width="110" height="88" fill="${o.sky}" stroke="${o.dark}" stroke-width="6"/><path d="M307 36v88M252 80h110" stroke="${o.dark}" stroke-width="4"/>`;
+    if (old){
+      b += `<rect x="36" y="140" width="196" height="100" rx="6" fill="#9A6B43"/><rect x="36" y="140" width="196" height="14" fill="#7A5232"/><path d="M108 240v-34a26 26 0 0 1 52 0v34z" fill="#3A2A1A"/><ellipse cx="134" cy="226" rx="16" ry="12" fill="#E8862E"/><ellipse cx="134" cy="230" rx="8" ry="7" fill="#F6C453"/>`;
+      b += `<ellipse cx="134" cy="138" rx="72" ry="14" fill="#2E2A26"/><g fill="none" stroke="#FFF8E7" stroke-width="5" stroke-linecap="round" opacity=".85"><path d="M104 112c-10-14 10-22 0-38"/><path d="M134 108c-10-16 10-26 0-44"/><path d="M164 112c-10-14 10-22 0-38"/></g>`;
+      b += `<ellipse cx="300" cy="216" rx="34" ry="40" fill="#7A5232"/><rect x="282" y="170" width="36" height="12" rx="4" fill="#5B3D24"/><ellipse cx="358" cy="232" rx="22" ry="27" fill="#8B6238"/>`;
+    } else {
+      b += `<rect x="30" y="150" width="210" height="90" fill="#FFFFFF" stroke="#B8C4C1" stroke-width="3"/><rect x="30" y="150" width="210" height="12" fill="#5C6B68"/><rect x="60" y="140" width="60" height="10" rx="3" fill="#2E2A26"/><rect x="150" y="128" width="64" height="22" rx="6" fill="#C0C8C6"/><path d="M214 136h18" stroke="#2E2A26" stroke-width="5" stroke-linecap="round"/>`;
+      b += `<rect x="282" y="150" width="80" height="90" rx="4" fill="#DDE5E3" stroke="#B8C4C1" stroke-width="3"/><rect x="294" y="162" width="56" height="34" rx="3" fill="#2F5D50" opacity=".7"/>`;
+    }
+  } else {
+    b += `<rect width="400" height="300" fill="${o.sky}"/><circle cx="80" cy="56" r="24" fill="${o.sun}"/><polygon points="0,170 90,84 180,170" fill="${o.far}"/><polygon points="120,170 240,62 360,170" fill="${o.mid}"/><polygon points="280,170 360,104 400,140 400,170" fill="${o.far}"/><rect y="168" width="400" height="132" fill="${old ? '#B99B62' : '#8CC27A'}"/>`;
+    b += `<g stroke="${o.dark}" stroke-width="3" opacity=".4"><path d="M0 196h400"/><path d="M0 220h400"/><path d="M0 250h400"/><path d="M0 280h400"/></g>`;
+    if (old) b += `<rect x="262" y="150" width="70" height="40" fill="#9C7446"/><polygon points="254,152 297,124 340,152" fill="${o.dark}"/><rect x="290" y="166" width="14" height="24" fill="${o.dark}"/>`;
+    else b += `<rect x="0" y="238" width="400" height="18" fill="#8D99A3"/><rect x="262" y="120" width="60" height="70" fill="#F1F3F2"/><rect x="262" y="114" width="60" height="8" fill="${o.dark}"/><rect x="272" y="132" width="14" height="14" fill="#9CC7E0"/><rect x="298" y="132" width="14" height="14" fill="#9CC7E0"/><rect x="286" y="164" width="14" height="26" fill="${o.dark}"/>`;
+    b += `<rect x="58" y="150" width="8" height="40" fill="${o.dark}"/><circle cx="62" cy="140" r="24" fill="${old ? '#8A7A45' : '#3F8F5F'}"/>`;
+  }
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">${b}</svg>`);
+}
+const SAMPLES = [{k:'street', name:'老街'}, {k:'kitchen', name:'灶腳'}, {k:'field', name:'稻田'}];
+
+function seedWorks(){
+  return [
+    {id:'s1', seed:true, title:'老街口的腳踏車行', elder:'e2', youth:'y2', topic:TOPICS.history, date:'示範作品',
+     text:'我十六歲就在老街口的腳踏車行當學徒。那時候整條街都是騎樓，下雨天大家擠在亭仔腳聊天。師傅很嚴，補一條內胎要練三個月。現在車行變成便利商店了，可是我每次經過，還是聞得到機油的味道。',
+     keywords:['老街','學徒','腳踏車'], photo:scene('street','old'), now:scene('street','now'), art:'', likes:12,
+     comments:[{who:'y2', text:'正雄伯講到補內胎的時候眼睛都亮了，下次想跟您學！'}]},
+    {id:'s2', seed:true, title:'灶腳的鹹菜香', elder:'e3', youth:'y3', topic:TOPICS.cook, date:'示範作品',
+     text:'小時候最期待過年前，阿母會在灶腳醃鹹菜。大灶的火燒得旺旺的，我負責顧火，常常被煙燻到流眼淚。阿母說，鹹菜要用腳踩才會香。現在我自己醃，還是照她教的方法，一點都不敢偷懶。',
+     keywords:['灶腳','過年','鹹菜'], photo:scene('kitchen','old'), now:'', art:'', likes:8, comments:[]}
+  ];
+}
+function newTask(){ return {step:1, sample:'', photo:'', now:'', qa:[], q:FIRST_Q, draft:'', title:'', text:'', keywords:[], followup:'', art:''}; }
+function fresh(){
+  return {v:1, role:'elder', me:{elder:'e1', youth:'y1'}, likes:{elder:['cook','history'], youth:['photo','cook']}, mode:{elder:'offline', youth:'offline'},
+    paired:false, topic:'', checkin:false, task:newTask(), works:seedWorks(), reflections:[], log:[], chat:[]};
+}
+
+/* ---------- state ---------- */
+const KEY = 'care-proto-v1';
+let S = fresh();
+try { const raw = localStorage.getItem(KEY); if (raw){ const o = JSON.parse(raw); if (o && o.v === 1 && o.task && Array.isArray(o.works)) S = o; } } catch (e) {}
+const ui = {sheet:null, chatDraft:'', reflectText:'', mood:'', commentDraft:'', published:'', cmpMode:'slide', cmpPos:50, confirmReset:false, csv:false};
+let busy = '';
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function log(type){ S.log.push({t:Date.now(), role:S.role, type}); if (S.log.length > 300) S.log.shift(); }
+const other = () => S.role === 'elder' ? 'youth' : 'elder';
+const you = () => S.role === 'elder' ? '您' : '你';
+const mine = () => S.works.filter(w => !w.seed);
+
+function stages(){
+  const m = mine();
+  return [
+    {k:'c', name:'找學伴', cta:'去找學伴', desc:'選興趣、配對學伴、決定共創主題', done:S.paired && !!S.topic, href:'#match'},
+    {k:'a', name:'圓夢任務', cta:'開始圓夢任務', desc:'用老照片說故事，做成故事卡', done:m.length > 0, href:'#task'},
+    {k:'r', name:'回顧', cta:'寫下今天的回顧', desc:'說說今天的心情和收穫', done:S.reflections.length > 0, href:'#reflect'},
+    {k:'e', name:'成果牆', cta:'去成果牆留言、按讚', desc:'發表作品、互相留言、拿徽章', done:m.some(w => w.comments.length > 0 || w.likes > 0), href:'#wall'}
+  ];
+}
+function badges(){
+  const m = mine(), roles = new Set(S.reflections.map(r => r.role));
+  return [
+    {name:'故事達人', how:'完成一張故事卡', got:m.length > 0},
+    {name:'時光旅人', how:'做一次時光對比', got:m.some(w => w.now)},
+    {name:'生活導師', how:'故事收到青年留言', got:m.some(w => w.comments.some(c => P(c.who).role === 'youth'))},
+    {name:'傾聽夥伴', how:'青年寫下回顧', got:roles.has('youth')},
+    {name:'最佳拍檔', how:'兩人都完成回顧', got:roles.has('elder') && roles.has('youth')}
+  ];
+}
+
+/* ---------- platform capabilities (AI, dictation, read-aloud) ---------- */
+let sampleFn = null, sampleImages = false, tts = null, dict = null, dictState = 'idle', dictTarget = null, speaking = false, synthOK = false;
+function cap(name){
+  try { return (window.claude && typeof window.claude.use === 'function') ? window.claude.use(name).catch(() => null) : Promise.resolve(null); }
+  catch (e) { return Promise.resolve(null); }
+}
+function refreshCaps(){
+  document.body.classList.toggle('has-ai', !!sampleFn);
+  document.body.classList.toggle('has-dict', !!dict);
+  document.body.classList.toggle('has-tts', !!tts || synthOK);
+  if (view() === 'research' && !ui.sheet) render();
+}
+cap('sample').then(s => {
+  if (!s) return;
+  sampleFn = s; refreshCaps();
+  try { if (typeof s.limits === 'function') s.limits().then(l => { sampleImages = !!(l && l.images); }).catch(() => {}); } catch (e) {}
+});
+cap('dictation').then(d => {
+  if (!d) return;
+  dict = d;
+  try {
+    d.onPartial(({text}) => { if (dictTarget) dictTarget.el.value = dictTarget.base + text; });
+    d.onFinal(({text}) => { if (dictTarget){ dictTarget.base += text; dictTarget.el.value = dictTarget.base; setPath(dictTarget.el.dataset.bind, dictTarget.base); save(); } });
+    d.onState(({state}) => { dictState = state; if (state === 'idle') dictTarget = null; paintMic(); });
+  } catch (e) {}
+  refreshCaps();
+});
+cap('tts').then(t => {
+  if (t){ tts = t; try { t.onState(({state}) => { speaking = state === 'speaking'; }); } catch (e) {} }
+  else synthOK = ('speechSynthesis' in window) && typeof window.SpeechSynthesisUtterance !== 'undefined';
+  refreshCaps();
+});
+function paintMic(){
+  document.querySelectorAll('[data-act="mic"]').forEach(b => {
+    const on = dictState === 'listening' && dictTarget && dictTarget.el.id === b.dataset.for;
+    b.classList.toggle('on', !!on);
+    const sp = b.querySelector('span'); if (sp) sp.textContent = on ? '說完了，按這裡' : '用說的';
+  });
+}
+function speak(text){
+  text = String(text || '').trim().slice(0, 1900);
+  if (!text) return;
+  if (tts){
+    if (speaking){ try { tts.stop(); } catch (e) {} return; }
+    tts.speak(text, {rate:S.role === 'elder' ? 0.9 : 1}).catch(e => {
+      if (e && e.code === 'not_granted'){ tts = null; refreshCaps(); }
+      else if (e && e.code === 'busy') toast('請先結束語音輸入，再按一次');
+      else if (e && e.code === 'rate_limited') toast('朗讀太頻繁了，請等一下再試');
+    });
+    return;
+  }
+  if (!synthOK) return;
+  try {
+    if (speechSynthesis.speaking){ speechSynthesis.cancel(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW'; u.rate = S.role === 'elder' ? 0.85 : 1;
+    let started = false; u.onstart = () => { started = true; };
+    speechSynthesis.speak(u);
+    setTimeout(() => { if (!started && !speechSynthesis.speaking){ synthOK = false; refreshCaps(); toast('這個瀏覽器不能朗讀，請改用電腦版 Chrome 開啟'); } }, 2500);
+  } catch (e) { synthOK = false; refreshCaps(); }
+}
+async function askAI(prompt, opts){
+  if (!sampleFn) return null;
+  try {
+    const r = await sampleFn(prompt, Object.assign({modelTier:'quick'}, opts || {}));
+    return ((r && r.text) || '').trim() || null;
+  } catch (e) {
+    if (e && e.code === 'not_granted'){ sampleFn = null; refreshCaps(); }
+    else if (e && e.code === 'rate_limited') toast('AI 現在比較忙，先用內建的題目');
+    return null;
+  }
+}
+function photoBlob(){
+  const u = S.task.photo;
+  if (!sampleImages || !/^data:image\/jpeg;base64,/.test(u)) return null;
+  try { const bin = atob(u.split(',')[1]); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return new Blob([arr], {type:'image/jpeg'}); }
+  catch (e) { return null; }
+}
+
+/* ---------- prompts ---------- */
+const qaText = () => S.task.qa.map(x => '問：' + x.q + '\n答：' + x.a).join('\n');
+function promptQ(hasImage){
+  return `你是陪長輩看老照片、引導懷舊敘事的訪談者。共創主題是「${S.topic}」。${hasImage ? '附上的圖片是長輩選的老照片，可以參考照片內容提問。' : ''}
+以下是到目前為止的問答：
+${qaText()}
+
+請根據長輩剛才的回答，再問「一個」溫暖、具體、容易回答的問題，幫助他回想人、事、時、地、物，或當時的聲音、味道、心情。不要問是非題，不要觸及傷痛，不要重複問過的內容。只輸出問題本身，繁體中文，30 個字以內，稱呼對方「您」。`;
+}
+function promptStory(){
+  return `請把下面長輩口述的問答，整理成一篇由長輩第一人稱敘述的短故事。保留他說過的細節與用語，不要編造他沒說過的人名、年份或事件。繁體中文，120 到 180 字。
+主題：${S.topic}
+說故事的人：${P(S.me.elder).name}；陪伴的青年：${P(S.me.youth).name}
+問答：
+${qaText()}
+
+請嚴格依照下面四行的格式輸出，不要加其他文字：
+標題：（12 個字以內）
+故事：（一段文字）
+關鍵字：（3 個，用頓號分隔）
+延伸提問：（讓青年接著問長輩的一個問題）`;
+}
+function promptArt(){
+  return `請依照下面的故事畫一張簡單的懷舊風向量插畫。只輸出一個 <svg> 元素，不要任何說明文字。規格：viewBox="0 0 400 300"，先畫一個鋪滿畫面的背景，使用扁平色塊與基本形狀（rect、circle、ellipse、polygon、path、line），元素不超過 40 個，暖色復古色調，不要文字、不要 script、不要外部連結或圖片。
+故事：${S.task.title}。${S.task.text}`;
+}
+function promptChat(q){
+  const names = {home:'首頁', match:'找學伴', task:'圓夢任務', reflect:'回顧', wall:'成果牆', research:'研究者檢視'};
+  const hist = S.chat.slice(-6).map(m => (m.me ? '使用者：' : '小幫手：') + m.text).join('\n');
+  return `你是「CARE 青銀共創互動平台」的 AI 小幫手，服務對象是 65 歲以上的長輩，以及陪伴他們的青年志工。請用繁體中文、親切的口語回答，每次不超過 80 個字，一次只講一個步驟，不用專業術語，不用條列符號或 Markdown。
+平台功能：一、找學伴：選興趣後，系統推薦學伴，再選共創主題。二、圓夢任務：上傳老照片、回答問題說故事、AI 整理成故事卡、做時光對比。三、回顧：選心情、寫下今天的收穫。四、成果牆：看作品、留言、拿徽章。畫面最下方有五個按鈕可以切換，右上角可以換成字比較大的樂齡版。
+使用者現在在「${names[view()]}」頁，身分是${S.role === 'elder' ? '長輩' : '青年志工'}。如果問題跟平台無關，簡短回答後請他找現場的工作人員。
+${hist ? '先前的對話：\n' + hist + '\n' : ''}使用者的問題：${q}`;
+}
+function parseStory(t){
+  if (!t) return null;
+  const g = k => { const m = t.match(new RegExp(k + '[：:]\\s*([\\s\\S]*?)(?=\\n\\s*(?:標題|故事|關鍵字|延伸提問)[：:]|$)')); return m ? m[1].trim() : ''; };
+  const text = g('故事'); if (!text) return null;
+  return {title:g('標題').replace(/[「」《》（）()]/g, '').slice(0, 20), text, keywords:g('關鍵字').split(/[、,，\s]+/).filter(Boolean).slice(0, 4), followup:g('延伸提問')};
+}
+function cleanSvg(t){
+  if (!t) return '';
+  const m = t.match(/<svg[\s\S]*<\/svg>/i); if (!m) return '';
+  let s = m[0].replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '').replace(/<image[\s\S]*?>/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '').replace(/(xlink:href|href)\s*=\s*("[^"#][^"]*"|'[^'#][^']*')/gi, '');
+  if (!/xmlns=/.test(s)) s = s.replace(/<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
+}
+function canned(q){
+  if (/照片|上傳/.test(q)) return '請按下方的「圓夢任務」，再按橘色的「上傳老照片」，從手機相簿選一張就可以了。';
+  if (/學伴|配對/.test(q)) return '請按下方的「找學伴」，先點選喜歡的興趣，再從推薦名單裡選一位當學伴。';
+  if (/字|看不清/.test(q)) return '請按右上角的「樂齡版」，字和按鈕都會變大。';
+  if (/幫忙|求助|不會/.test(q)) return '請舉手，現場的青年志工會過來幫忙。也可以把問題打在下面，我一步一步說明。';
+  return '我現在連不上 AI，請先找身邊的青年學伴或工作人員幫忙。';
+}
+
+/* ---------- views ---------- */
+const VIEWS = {home:1, match:1, task:1, reflect:1, wall:1, research:1};
+function view(){ const h = location.hash.slice(1); return VIEWS[h] ? h : 'home'; }
+function go(v){ if (view() === v) render(true); else location.hash = v; }
+const tip = t => `<p class="tip y-only"><b>引導小卡</b>　${t}</p>`;
+const micBtn = id => `<button type="button" class="btn ghost mic" data-act="mic" data-for="${id}">${ic('mic')}<span>用說的</span></button>`;
+const avatar = (id, sm) => `<span class="avatar ${P(id).role === 'elder' ? 'elder' : ''} ${sm ? 'sm' : ''}" aria-hidden="true">${esc(P(id).name.slice(-1))}</span>`;
+function compare(oldSrc, nowSrc){
+  return `<div class="cmpwrap">
+    <div class="cmp ${ui.cmpMode === 'fade' ? 'fade' : ''}" style="--pos:${ui.cmpPos}%;--n:${ui.cmpPos}">
+      <img src="${nowSrc}" alt="現在的照片"><img class="old" src="${oldSrc}" alt="過去的照片"><i class="bar"></i>
+      <span class="l">過去</span><span class="r">現在</span>
+    </div>
+    <label class="vh" for="cmp-range">拖動比較過去與現在</label>
+    <input type="range" id="cmp-range" min="0" max="100" value="${ui.cmpPos}" data-cmp>
+    <div class="chips">
+      <button type="button" class="chip" data-act="cmpmode" data-mode="slide" aria-pressed="${ui.cmpMode !== 'fade'}">${ic('check')}左右對比</button>
+      <button type="button" class="chip" data-act="cmpmode" data-mode="fade" aria-pressed="${ui.cmpMode === 'fade'}">${ic('check')}疊影</button>
+    </div>
+  </div>`;
+}
+
+function vHome(){
+  const me = P(S.me[S.role]), st = stages(), nx = st.find(x => !x.done), done = st.filter(x => x.done).length;
+  const partner = S.paired ? P(S.me[other()]) : null;
+  return `<div class="cols"><div class="col">
+  <section class="hello">
+    <span class="tag">示範帳號</span>
+    <h1>${S.role === 'elder' ? esc(me.name) + '，您好' : '嗨，' + esc(me.name)}</h1>
+    <p>${partner ? `${you()}的學伴是 <b>${esc(partner.name)}</b>${S.topic ? `，共創主題「${esc(S.topic)}」。` : '。'}` : '還沒有學伴，先從找學伴開始。'}</p>
+  </section>
+  ${nx ? `<section class="card next" style="--stage:var(--${nx.k})">${stageChip(nx.k)}<h2>下一步：${nx.name}</h2><p>${nx.desc}</p><a class="btn accent block" href="${nx.href}">${ic('chev')}${nx.cta}</a></section>`
+       : `<section class="card next" style="--stage:var(--e)">${stageChip('e')}<h2>四個步驟都完成了</h2><p>可以再做一張故事卡，或到成果牆看看大家的作品。</p><a class="btn accent block" href="#task">${ic('image')}再做一張故事卡</a></section>`}
+  <section class="card">
+    <div class="row between"><h2>共創四步驟</h2><span class="count">${done}／4 完成</span></div>
+    <div class="meter y-only" style="--w:${done * 25}%"><i></i></div>
+    <ol class="steps">${st.map(x => `<li><a href="${x.href}" style="--stage:var(--${x.k})"><span class="letter">${STAGE[x.k][0]}</span><span class="st-t"><b>${x.name}</b><small>${x.desc}</small></span>${x.done ? `<span class="ok">${ic('check')}完成</span>` : (x === nx ? '<span class="nowtag">進行中</span>' : '<span></span>')}</a></li>`).join('')}</ol>
+  </section>
+  </div><div class="col">
+  <section class="card">
+    <div class="row">${ic('pin')}<h2>線下共創工作坊</h2></div>
+    <p>地點：彰化市社區關懷據點（示範）<br>時間：日期確定後會顯示在這裡</p>
+    ${S.checkin ? `<p class="ok">${ic('check')}已報到，歡迎${you()}！</p>` : `<button type="button" class="btn ghost block" data-act="checkin">${ic('check')}我到現場了，報到</button>`}
+  </section>
+  ${tip('今天先聽完長輩的故事，再用「後來呢？」接話。讓長輩自己按按鈕，你只在旁邊提示。')}
+  <p class="foot"><a href="#research">研究者檢視與雛形說明</a></p>
+  </div></div>`;
+}
+
+function score(p){
+  const my = S.likes[S.role], common = p.likes.filter(x => my.includes(x));
+  return {s:Math.min(98, 52 + common.length * 14 + (p.mode === S.mode[S.role] ? 6 : 0)), common};
+}
+function vMatch(){
+  const head = `<div class="head">${stageChip('c')}<h1>找學伴</h1></div>`;
+  if (S.paired){
+    const e = S.me.elder, y = S.me.youth;
+    const pairCard = `<div class="pair"><span class="who">${avatar(e)}${esc(P(e).name)}</span><span class="x">×</span><span class="who">${avatar(y)}${esc(P(y).name)}</span></div>`;
+    if (!S.topic){
+      const both = P(e).likes.filter(x => P(y).likes.includes(x));
+      const ids = Array.from(new Set(both.concat(S.likes[S.role], ['photo']))).slice(0, 4);
+      return head + `<section class="card"><h2>配對成功</h2>${pairCard}</section>
+      <section class="card"><h2>選一個想一起完成的主題</h2><div class="opts">${ids.map(id => `<button type="button" class="btn ghost block" data-act="topic" data-topic="${esc(TOPICS[id])}">${esc(TOPICS[id])}</button>`).join('')}</div></section>
+      ${tip('請長輩自己挑主題。他講得最起勁的那一個，就是最好的主題。')}`;
+    }
+    return head + `<section class="card"><h2>${you()}的學伴</h2>${pairCard}<p>共創主題：<b>${esc(S.topic)}</b></p>
+      <a class="btn accent block" href="#task">${ic('image')}開始圓夢任務</a>
+      <button type="button" class="btn ghost block" data-act="rematch">重新找學伴</button></section>`;
+  }
+  const cands = Object.keys(PEOPLE).filter(id => PEOPLE[id].role === other()).map(id => Object.assign({id}, score(PEOPLE[id]))).sort((a, b) => b.s - a.s);
+  return head + `<div class="cols"><div class="col">
+  <section class="card"><h2>一、${you()}喜歡什麼？（可以選好幾個）</h2>
+    <div class="chips">${INTERESTS.map(x => `<button type="button" class="chip" data-act="like" data-id="${x.id}" aria-pressed="${S.likes[S.role].includes(x.id)}">${ic('check')}${x.name}</button>`).join('')}</div></section>
+  <section class="card"><h2>二、想怎麼見面？</h2>
+    <div class="chips"><button type="button" class="chip" data-act="mode" data-mode="offline" aria-pressed="${S.mode[S.role] === 'offline'}">${ic('check')}到據點見面</button><button type="button" class="chip" data-act="mode" data-mode="online" aria-pressed="${S.mode[S.role] === 'online'}">${ic('check')}線上</button></div></section>
+  </div><div class="col">
+  <section class="card"><h2>三、推薦的學伴</h2>
+    <div class="list">${cands.map(c => { const p = PEOPLE[c.id]; return `<div class="person">${avatar(c.id)}<div class="info">
+      <div><b>${esc(p.name)}</b>　${p.age} 歲　<span class="muted">${p.mode === 'offline' ? '到據點見面' : '線上'}</span></div>
+      <p>${esc(p.intro)}</p>
+      ${c.common.length ? `<div class="chips">${c.common.map(i => `<span class="kw">${INAME[i]}</span>`).join('')}</div>` : '<p class="muted">目前沒有共同興趣</p>'}
+      <div class="row"><div class="meter" style="--w:${c.s}%;flex:1"><i></i></div><span class="count">契合度 ${c.s}%</span></div>
+      <button type="button" class="btn sm" data-act="pick" data-id="${c.id}">選${esc(p.name)}當學伴</button></div></div>`; }).join('')}</div>
+    <p class="muted">契合度依共同興趣與見面方式計算。名單為示範資料。</p></section>
+  </div></div>`;
+}
+
+const STEP_NAMES = ['選照片', '說故事', '整理故事', '時光對比', '完成'];
+function vTask(){
+  const head = `<div class="head">${stageChip('a')}<h1>圓夢任務</h1></div>`;
+  if (ui.published){
+    const w = S.works.find(x => x.id === ui.published);
+    return head + `<section class="card"><p class="ok">${ic('check')}故事卡已經放上成果牆</p><h2>「${esc(w ? w.title : '')}」完成了，${you()}真棒！</h2>
+      <a class="btn accent block" href="#reflect">${ic('note')}寫下今天的回顧</a>
+      <a class="btn ghost block" href="#wall">${ic('award')}看成果牆</a>
+      <button type="button" class="btn ghost block" data-act="newtask">${ic('image')}再做一張故事卡</button></section>`;
+  }
+  if (!S.paired || !S.topic){
+    return head + `<section class="card"><h2>先找到學伴，再一起開始</h2><p>圓夢任務要兩個人一起完成：長輩說故事，青年幫忙記錄。</p>
+      <a class="btn accent block" href="#match">${ic('users')}去找學伴</a>
+      <button type="button" class="btn ghost block" data-act="quick">用示範學伴直接開始</button></section>`;
+  }
+  const T = S.task;
+  const bar = `<div class="stepbar"><div class="row between"><b>${STEP_NAMES[T.step - 1]}</b><span class="count">步驟 ${T.step}／5</span></div><div class="meter" style="--w:${T.step * 20}%"><i></i></div>
+    ${T.step > 1 ? `<button type="button" class="btn ghost sm" style="align-self:flex-start" data-act="tback">${ic('back')}上一步</button>` : ''}</div>`;
+  let body = '';
+  if (T.step === 1){
+    const choose = `<section class="card"><h2>選一張有故事的老照片</h2>
+      <label class="btn accent block" for="file-old">${ic('up')}上傳老照片</label><input class="vh" type="file" id="file-old" accept="image/*" data-file="old">
+      <p class="muted">手邊沒有照片，也可以先用示範照片試試：</p>
+      <div class="thumbs">${SAMPLES.map(s => `<button type="button" data-act="sample" data-kind="${s.k}" aria-pressed="${T.sample === s.k}"><img src="${scene(s.k, 'old')}" alt="">${s.name}</button>`).join('')}</div></section>`;
+    body = T.photo ? `<div class="cols"><div class="col">${choose}</div><div class="col"><section class="card"><h2>就用這一張</h2><div class="photo"><img src="${T.photo}" alt="選好的老照片"></div><button type="button" class="btn accent block" data-act="tnext">${ic('chev')}下一步：說故事</button></section></div></div>` : choose;
+  } else if (T.step === 2){
+    body = `<div class="cols"><div class="col stick"><div class="photo side"><img src="${T.photo}" alt="老照片"></div>
+      ${tip('長輩停頓的時候先等三秒，不要急著接話。聽不懂的地名，請他慢慢再說一次。')}</div>
+      <div class="col"><section class="card talk">
+        ${T.qa.map(x => `<p class="bubble q">${esc(x.q)}</p><p class="bubble a">${esc(x.a)}</p>`).join('')}
+        ${busy === 'q' ? `<p class="bubble q wait">${ic('spark')}正在想下一個問題…</p>`
+          : T.q ? `<p class="bubble q big">${esc(T.q)}</p>
+            <button type="button" class="btn ghost sm spk" style="align-self:flex-start" data-act="speak" data-text="${esc(T.q)}">${ic('vol')}念給我聽</button>
+            <label class="lbl" for="ans">${S.role === 'elder' ? '您的回答' : '長輩的回答（可以幫忙打字）'}</label>
+            <textarea class="field" id="ans" rows="3" data-bind="S.task.draft" placeholder="想到什麼就說什麼">${esc(T.draft)}</textarea>
+            <div class="row">${micBtn('ans')}<button type="button" class="btn" data-act="nextq">${ic('check')}回答好了</button></div>
+            <p class="muted nodict">也可以按手機鍵盤上的麥克風，用說的輸入。</p>`
+          : `<p class="bubble q">說得真好！這些內容已經可以整理成故事了。</p>`}
+      </section>
+      ${T.qa.length ? `<button type="button" class="btn accent block" data-act="compose" ${busy ? 'disabled' : ''}>${ic('spark')}${busy === 'story' ? '正在整理故事…' : '整理成故事'}</button>` : ''}</div></div>`;
+  } else if (T.step === 3){
+    body = `${tip('把故事念給長輩聽，請他確認有沒有寫錯，再一起修改。')}
+      <div class="cols"><div class="col"><section class="card"><h2>故事整理好了，一起看看</h2>
+        <label class="lbl" for="ttl">標題</label><input class="field" id="ttl" type="text" data-bind="S.task.title" value="${esc(T.title)}">
+        <label class="lbl" for="txt">故事內容（可以直接修改）</label><textarea class="field story" id="txt" rows="8" data-bind="S.task.text">${esc(T.text)}</textarea>
+        ${T.keywords.length ? `<div class="chips">${T.keywords.map(k => `<span class="kw">${esc(k)}</span>`).join('')}</div>` : ''}
+        <div class="row"><button type="button" class="btn ghost sm spk" data-act="speak" data-from="txt">${ic('vol')}念故事</button>
+          <div class="ai-only"><button type="button" class="btn ghost sm" data-act="compose" ${busy ? 'disabled' : ''}>${ic('spark')}${busy === 'story' ? '整理中…' : '請 AI 重新整理'}</button></div></div>
+        ${T.followup ? `<p class="bubble q">可以接著問：${esc(T.followup)}</p>` : ''}
+      </section></div>
+      <div class="col"><section class="card"><h2>回憶插畫</h2>
+        ${T.art ? `<div class="photo"><img src="${T.art}" alt="AI 畫的回憶插畫"></div>` : ''}
+        <div class="ai-only"><button type="button" class="btn ghost block" data-act="art" ${busy ? 'disabled' : ''}>${ic('spark')}${busy === 'art' ? '正在畫…' : (T.art ? '重畫一張' : '請 AI 畫一張回憶插畫')}</button></div>
+        ${T.art ? `<button type="button" class="btn ghost sm" style="align-self:flex-start" data-act="artclear">不放插畫</button>` : ''}
+        <p class="muted">這一版先用簡單的插畫示意，正式版會改用圖像生成服務。</p></section>
+      <button type="button" class="btn accent block" data-act="tnext">${ic('chev')}下一步：時光對比</button></div></div>`;
+  } else if (T.step === 4){
+    body = `<section class="card"><h2>同一個地方，現在變成什麼樣子？</h2>
+        ${T.now ? compare(T.photo, T.now) + `<button type="button" class="btn ghost sm" style="align-self:flex-start" data-act="nowclear">換一張現在的照片</button>`
+          : `<label class="btn block" for="file-now">${ic('up')}上傳現在的照片</label><input class="vh" type="file" id="file-now" accept="image/*" data-file="now">
+             ${T.sample ? `<button type="button" class="btn ghost block" data-act="nowsample">用示範的「現在」照片</button>` : ''}`}
+        <p class="muted">正式版會用手機鏡頭對準現場，把老照片疊在畫面上（AR）。這一版先用兩張照片比較。</p></section>
+      <button type="button" class="btn accent block" data-act="tnext">${ic('chev')}${T.now ? '下一步：完成故事卡' : '先略過這一步'}</button>`;
+  } else {
+    body = `<div class="cols"><div class="col"><div class="photo"><img src="${T.photo}" alt="老照片"></div></div>
+      <div class="col"><section class="card"><h2>故事卡完成了</h2>
+        <h3 style="font-size:1.25rem">${esc(T.title || S.topic)}</h3>
+        <p class="story">${esc(T.text)}</p>
+        ${T.keywords.length ? `<div class="chips">${T.keywords.map(k => `<span class="kw">${esc(k)}</span>`).join('')}</div>` : ''}
+        <p class="muted">說故事：${esc(P(S.me.elder).name)}　陪伴記錄：${esc(P(S.me.youth).name)}</p></section>
+      <button type="button" class="btn accent block" data-act="publish">${ic('award')}放上成果牆</button></div></div>`;
+  }
+  return head + `<p>主題：<b>${esc(S.topic)}</b></p>` + bar + body;
+}
+
+function vReflect(){
+  const list = S.reflections.slice().reverse();
+  return `<div class="head">${stageChip('r')}<h1>回顧</h1></div>
+  ${tip('寫下長輩今天讓你印象最深的一句話，下次見面可以從這裡聊起。')}
+  <div class="cols"><div class="col">
+  <section class="card"><h2>今天的心情</h2>
+    <div class="moods">${MOODS.map(m => `<button type="button" data-act="mood" data-m="${m.id}" aria-pressed="${ui.mood === m.id}">${ic(m.id)}${m.name}</button>`).join('')}</div>
+    <label class="lbl" for="ref">${S.role === 'elder' ? '今天最開心的是什麼？' : '今天從長輩身上學到什麼？'}</label>
+    <textarea class="field" id="ref" rows="3" data-bind="ui.reflectText" placeholder="一兩句話就可以">${esc(ui.reflectText)}</textarea>
+    <div class="row">${micBtn('ref')}<button type="button" class="btn accent" data-act="reflect">${ic('check')}送出回顧</button></div>
+    <p class="muted nodict">也可以按手機鍵盤上的麥克風，用說的輸入。</p></section>
+  </div><div class="col">
+  <section class="card"><h2>我們的學習歷程</h2>
+    ${list.length ? list.map(r => `<div class="entry">${avatar(r.who, true)}<div><div class="meta"><b>${esc(P(r.who).name)}</b><span class="kw">${esc((MOODS.find(m => m.id === r.mood) || {}).name || '')}</span><span>${esc(r.date)}</span></div><p>${esc(r.text)}</p></div></div>`).join('')
+      : `<p class="muted">還沒有回顧。完成圓夢任務後，寫下第一則，兩個人的回顧都會出現在這裡。</p>`}</section>
+  </div></div>`;
+}
+
+function vWall(){
+  const bs = badges();
+  return `<div class="head">${stageChip('e')}<h1>成果牆</h1></div>
+  <section class="card"><div class="row between"><h2>${you()}的徽章</h2><span class="count">${bs.filter(b => b.got).length}／${bs.length}</span></div>
+    <div class="badges">${bs.map(b => `<div class="badge ${b.got ? 'got' : ''}"><span class="medal">${ic('award')}</span><b>${b.name}</b>${b.got ? '已獲得' : b.how}</div>`).join('')}</div></section>
+  <section class="list grid" data-wide>${S.works.map(w => `<button type="button" class="work" data-act="open" data-id="${w.id}"><img src="${w.photo}" alt=""><span class="w-t"><b>${esc(w.title)}</b><span class="muted">${esc(P(w.elder).name)} × ${esc(P(w.youth).name)}${w.seed ? '　示範作品' : ''}</span><span class="row"><span class="stat">${ic('heart')}${w.likes}</span><span class="stat">${ic('chat')}${w.comments.length}</span></span></span></button>`).join('')}</section>
+  ${tip('留言時具體說出你記得的細節，長輩會知道你真的有在聽。')}`;
+}
+
+const EVENT_NAMES = {role:'切換版本', pair:'配對學伴', topic:'選定主題', photo:'選好照片', answer:'回答提問', voice:'語音輸入', ai_q:'AI 引導提問', story:'整理故事', art:'AI 插畫', compare:'時光對比', publish:'發表故事卡', reflect:'送出回顧', like:'按讚', comment:'留言', chat:'詢問小幫手', checkin:'線下報到', present:'發表模式'};
+const INTERACT = ['answer', 'comment', 'like', 'reflect', 'chat', 'checkin', 'pair'];
+function csv(){ return '時間,身分,事件\n' + S.log.map(l => `${new Date(l.t).toLocaleString('zh-TW', {hour12:false})},${l.role === 'elder' ? '長輩' : '青年'},${EVENT_NAMES[l.type] || l.type}`).join('\n'); }
+function vResearch(){
+  const st = stages(), n = t => S.log.filter(l => t.includes(l.type)).length;
+  const state = (on, a, b) => `<span class="state"><i class="dot ${on ? 'on' : ''}"></i>${on ? a : b}</span>`;
+  return `<div class="head"><span class="tag">給研究者與指導教授看</span><h1>研究者檢視</h1><p class="muted">正式版會移到後台，受試者看不到這一頁。</p></div>
+  <div class="cols"><div class="col">
+  <section class="card"><h2>互動指標</h2>
+    <div class="tiles">
+      <div class="tile"><b>${n(INTERACT)}</b><span>互動次數</span></div>
+      <div class="tile"><b>${st.filter(x => x.done).length * 25}%</b><span>四步驟完成比例</span></div>
+      <div class="tile"><b>${n(['voice'])}</b><span>語音輸入次數</span></div>
+      <div class="tile"><b>${n(['ai_q', 'story', 'art', 'chat'])}</b><span>AI 協助次數</span></div>
+    </div>
+    <p class="muted">對應計畫書的互動頻率與共同完成任務比例。目前只統計這台裝置上的操作。</p></section>
+  <section class="card"><h2>這台裝置可用的功能</h2>
+    <div class="row between"><span>AI 引導與故事整理</span>${state(!!sampleFn, '已連線', '未連線，改用內建題庫')}</div>
+    <div class="row between"><span>語音輸入</span>${state(!!dict, '可用', '不可用，改用打字')}</div>
+    <div class="row between"><span>朗讀</span>${state(!!tts || synthOK, '可用', '不可用')}</div>
+    <p class="muted">語音輸入與朗讀在電腦版 Chrome 最完整，手機上可能只能打字。</p></section>
+  </div><div class="col">
+  <section class="card"><h2>這一版與正式版的差別</h2>
+    <div class="tbl-wrap"><table><thead><tr><th>功能</th><th>這一版（雛形）</th><th>正式版</th></tr></thead><tbody>
+      <tr><td>興趣配對</td><td>共同興趣計分</td><td>加入更多條件，視訪談結果調整</td></tr>
+      <tr><td>語音輸入</td><td>平台內建聽寫</td><td>Google Speech-to-Text</td></tr>
+      <tr><td>AI 引導、故事整理</td><td>已接上生成式 AI</td><td>改由自己的伺服器呼叫</td></tr>
+      <tr><td>回憶圖像</td><td>簡單插畫示意</td><td>圖像生成 API</td></tr>
+      <tr><td>時光對比</td><td>兩張照片滑動、疊影</td><td>手機鏡頭 AR 疊圖</td></tr>
+      <tr><td>資料保存</td><td>只存在這台裝置</td><td>伺服器資料庫，雙方各用自己的手機</td></tr>
+      <tr><td>帳號與學伴</td><td>示範人物，切換版本模擬對方</td><td>真實註冊與配對</td></tr>
+      <tr><td>版面</td><td>手機、平板、筆電自動調整</td><td>同這一版</td></tr>
+      <tr><td>入口</td><td>直接開網址</td><td>LINE 官方帳號（評估中）</td></tr>
+    </tbody></table></div></section>
+  </div></div>
+  <section class="card"><div class="row between"><h2>操作紀錄</h2><span class="count">${S.log.length} 筆</span></div>
+    ${S.log.length ? `<div class="tbl-wrap"><table><thead><tr><th>時間</th><th>身分</th><th>事件</th></tr></thead><tbody>${S.log.slice(-12).reverse().map(l => `<tr><td class="num">${clock(l.t)}</td><td>${l.role === 'elder' ? '長輩' : '青年'}</td><td>${EVENT_NAMES[l.type] || esc(l.type)}</td></tr>`).join('')}</tbody></table></div><p class="muted">只顯示最近 12 筆。</p>` : `<p class="muted">還沒有紀錄。回到首頁操作幾步，這裡就會出現。</p>`}
+    <button type="button" class="btn ghost block" data-act="copycsv">複製全部紀錄（CSV）</button>
+    ${ui.csv ? `<label class="lbl" for="csv">無法自動複製，請手動全選複製：</label><textarea class="field" id="csv" rows="5" readonly>${esc(csv())}</textarea>` : ''}
+    ${ui.confirmReset ? `<p><b>確定要清除所有操作，回到剛打開的樣子嗎？</b></p><div class="row"><button type="button" class="btn accent" data-act="resetyes">確定清除</button><button type="button" class="btn ghost" data-act="resetno">取消</button></div>`
+      : `<button type="button" class="btn ghost block" data-act="reset">清除資料，重新示範</button>`}</section>`;
+}
+
+function sheetHtml(){
+  const sh = ui.sheet;
+  if (sh.type === 'help'){
+    const quick = ['怎麼上傳老照片？', '怎麼找學伴？', '字太小看不清楚', '我需要人幫忙'];
+    return `<div class="sheet-top"><h2>小幫手</h2><button type="button" class="btn ghost sm" data-act="close">${ic('x')}關閉</button></div>
+    <div class="sheet-body talk" id="chat-body">
+      <p class="bubble q">${you()}好，我是小幫手。遇到不會的地方，直接問我就可以了。</p>
+      ${S.chat.map(m => `<p class="bubble ${m.me ? 'a' : 'q'}">${esc(m.text)}</p>${m.me ? '' : `<button type="button" class="btn ghost sm spk" style="align-self:flex-start" data-act="speak" data-text="${esc(m.text)}">${ic('vol')}念給我聽</button>`}`).join('')}
+      ${busy === 'chat' ? `<p class="bubble q wait">${ic('spark')}正在想…</p>` : ''}
+      <div class="opts">${quick.map(q => `<button type="button" class="btn ghost block" data-act="quickq" data-q="${q}">${q}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-foot"><label class="vh" for="chat-in">輸入問題</label>
+      <div class="send"><textarea class="field" id="chat-in" rows="1" data-bind="ui.chatDraft" placeholder="把問題打在這裡">${esc(ui.chatDraft)}</textarea><button type="button" class="btn" data-act="chatsend" ${busy ? 'disabled' : ''}>${ic('send')}送出</button></div>
+      <div class="row">${micBtn('chat-in')}</div></div>`;
+  }
+  const w = S.works.find(x => x.id === sh.id);
+  if (!w) return '';
+  if (sh.type === 'present'){
+    return `<div class="sheet-top"><h2>成果發表</h2><button type="button" class="btn ghost sm" data-act="back2work">${ic('x')}結束發表</button></div>
+    <div class="sheet-body present"><div class="cols">
+      <div class="col">${w.now ? compare(w.photo, w.now) : `<div class="photo"><img src="${w.photo}" alt=""></div>`}</div>
+      <div class="col"><h1>${esc(w.title)}</h1><p class="muted">說故事：${esc(P(w.elder).name)}　陪伴記錄：${esc(P(w.youth).name)}</p>
+      <p class="story">${esc(w.text)}</p>
+      <button type="button" class="btn block spk" data-act="speak" data-work="${w.id}">${ic('vol')}念故事給大家聽</button></div>
+    </div></div>`;
+  }
+  return `<div class="sheet-top"><button type="button" class="btn ghost sm" data-act="close">${ic('back')}返回</button><h2>${esc(w.title)}</h2></div>
+  <div class="sheet-body"><div class="cols">
+    <div class="col">${w.now ? compare(w.photo, w.now) : `<div class="photo"><img src="${w.photo}" alt="故事的老照片"></div>`}
+    ${w.art ? `<div class="photo"><img src="${w.art}" alt="回憶插畫"></div>` : ''}</div>
+    <div class="col"><p class="muted">說故事：${esc(P(w.elder).name)}　陪伴記錄：${esc(P(w.youth).name)}　${esc(w.date)}</p>
+    <p class="story">${esc(w.text)}</p>
+    ${w.keywords.length ? `<div class="chips">${w.keywords.map(k => `<span class="kw">${esc(k)}</span>`).join('')}</div>` : ''}
+    <div class="row"><button type="button" class="btn ghost sm spk" data-act="speak" data-work="${w.id}">${ic('vol')}念故事</button>
+      <button type="button" class="btn ghost sm" data-act="likework" data-id="${w.id}">${ic('heart')}謝謝分享　${w.likes}</button>
+      <button type="button" class="btn ghost sm" data-act="present" data-id="${w.id}">${ic('award')}發表模式</button></div>
+    <section class="card"><h2>留言</h2>
+      ${w.comments.length ? w.comments.map(c => `<div class="entry">${avatar(c.who, true)}<div><div class="meta"><b>${esc(P(c.who).name)}</b></div><p>${esc(c.text)}</p></div></div>`).join('') : '<p class="muted">還沒有留言，寫下第一則吧。</p>'}
+    </section></div>
+  </div></div>
+  <div class="sheet-foot"><label class="lbl" for="cmt">以「${esc(P(S.me[S.role]).name)}」的身分留言</label>
+    <div class="send"><textarea class="field" id="cmt" rows="1" data-bind="ui.commentDraft" placeholder="想對他說什麼？">${esc(ui.commentDraft)}</textarea><button type="button" class="btn" data-act="comment" data-id="${w.id}">${ic('send')}送出</button></div>
+    <div class="row">${micBtn('cmt')}</div></div>`;
+}
+
+/* ---------- render ---------- */
+const TABS = [['home','home','首頁'], ['match','users','找學伴'], ['task','image','圓夢任務'], ['reflect','note','回顧'], ['wall','award','成果牆']];
+let lastView = '';
+function render(top){
+  const v = view(), main = $('#main'), keep = (v === lastView && !top) ? main.scrollTop : 0;
+  document.documentElement.dataset.role = S.role;
+  $('#role-elder').setAttribute('aria-pressed', S.role === 'elder');
+  $('#role-youth').setAttribute('aria-pressed', S.role === 'youth');
+  const html = ({home:vHome, match:vMatch, task:vTask, reflect:vReflect, wall:vWall, research:vResearch})[v]();
+  main.innerHTML = `<div class="page${/class="cols|data-wide/.test(html) ? ' wide' : ''}">${html}</div>`;
+  main.scrollTop = keep; lastView = v;
+  $('#tabs').innerHTML = TABS.map(t => `<a href="#${t[0]}" ${v === t[0] ? 'aria-current="page"' : ''}>${ic(t[1])}${t[2]}</a>`).join('');
+  const sheet = $('#sheet');
+  if (ui.sheet){ sheet.hidden = false; sheet.innerHTML = `<div class="panel panel-${ui.sheet.type}">${sheetHtml()}</div>`; const cb = $('#chat-body'); if (cb) cb.scrollTop = cb.scrollHeight; }
+  else { sheet.hidden = true; sheet.innerHTML = ''; }
+  $('#fab').hidden = !!ui.sheet;
+  paintMic();
+}
+let toastTimer = 0;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600); }
+function setPath(path, val){
+  if (!path) return;
+  const parts = path.split('.'); let o = parts[0] === 'ui' ? ui : S;
+  for (let i = 1; i < parts.length - 1; i++) o = o[parts[i]];
+  o[parts[parts.length - 1]] = val;
+}
+function stopDict(){ if (dict && dictState === 'listening'){ try { dict.stop().catch(() => {}); } catch (e) {} } }
+
+/* ---------- actions ---------- */
+async function nextQ(){
+  const T = S.task, a = T.draft.trim();
+  if (!a){ toast('請先說一點點，或打幾個字'); return; }
+  stopDict();
+  T.qa.push({q:T.q, a}); T.draft = ''; T.q = ''; log('answer');
+  if (T.qa.length >= 4){ save(); render(); return; }
+  busy = 'q'; render();
+  const blob = photoBlob();
+  let ai = await askAI(promptQ(!!blob), blob ? {images:[blob]} : {});
+  if (!ai && blob) ai = await askAI(promptQ(false));
+  if (ai){ ai = ai.replace(/^["「『]|["」』]$/g, '').split('\n')[0].trim().slice(0, 60); log('ai_q'); }
+  T.q = ai || BANK[T.qa.length] || BANK[BANK.length - 1];
+  busy = ''; save(); render();
+}
+async function compose(){
+  const T = S.task;
+  if (T.step === 2 && T.draft.trim()){ T.qa.push({q:T.q || '還想補充什麼？', a:T.draft.trim()}); T.draft = ''; log('answer'); }
+  if (!T.qa.length) return;
+  stopDict();
+  busy = 'story'; render();
+  const p = parseStory(await askAI(promptStory(), {modelTier:'default'}));
+  T.title = (p && p.title) || S.topic;
+  T.text = (p && p.text) || T.qa.map(x => x.a).join('');
+  T.keywords = (p && p.keywords) || [];
+  T.followup = (p && p.followup) || '';
+  T.step = 3; busy = ''; log('story'); save(); render(true);
+  if (!p && sampleFn === null) toast('目前沒有連上 AI，先把回答直接串成故事');
+}
+async function drawArt(){
+  busy = 'art'; render();
+  const uri = cleanSvg(await askAI(promptArt(), {modelTier:'default'}));
+  busy = '';
+  if (uri){ S.task.art = uri; log('art'); save(); } else toast('這次沒有畫成功，請再試一次');
+  render();
+}
+async function sendChat(text){
+  text = String(text || '').trim();
+  if (!text || busy) return;
+  stopDict();
+  S.chat.push({me:true, text}); ui.chatDraft = ''; busy = 'chat'; log('chat'); render();
+  const needHuman = /需要人幫忙/.test(text);
+  const ans = (needHuman ? null : await askAI(promptChat(text), {cache:false})) || canned(text);
+  S.chat.push({me:false, text:ans}); if (S.chat.length > 40) S.chat.splice(0, S.chat.length - 40);
+  busy = ''; save(); render();
+}
+function readImage(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => {
+      const im = new Image();
+      im.onerror = rej;
+      im.onload = () => {
+        const k = Math.min(1, 960 / Math.max(im.width, im.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.82));
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+const ACT = {
+  role(el){ stopDict(); S.role = el.dataset.role; log('role'); save(); render(); },
+  like(el){ const a = S.likes[S.role], id = el.dataset.id, i = a.indexOf(id); if (i >= 0) a.splice(i, 1); else a.push(id); save(); render(); },
+  mode(el){ S.mode[S.role] = el.dataset.mode; save(); render(); },
+  pick(el){ S.me[other()] = el.dataset.id; S.paired = true; S.topic = ''; log('pair'); save(); render(true); toast('配對成功，接著選主題'); },
+  topic(el){ S.topic = el.dataset.topic; log('topic'); save(); render(true); },
+  rematch(){ S.paired = false; S.topic = ''; save(); render(true); },
+  quick(){ S.paired = true; S.topic = TOPICS.photo; log('pair'); save(); render(true); },
+  sample(el){ const T = S.task; T.sample = el.dataset.kind; T.photo = scene(T.sample, 'old'); T.now = ''; log('photo'); save(); render(); },
+  tnext(){ const T = S.task; if (T.step === 3 && !T.text.trim()){ toast('故事內容還是空的'); return; } if (T.step === 4 && T.now) log('compare'); T.step = Math.min(5, T.step + 1); save(); render(true); },
+  tback(){ stopDict(); S.task.step = Math.max(1, S.task.step - 1); save(); render(true); },
+  nextq(){ nextQ(); },
+  compose(){ compose(); },
+  art(){ drawArt(); },
+  artclear(){ S.task.art = ''; save(); render(); },
+  nowsample(){ S.task.now = scene(S.task.sample, 'now'); save(); render(); },
+  nowclear(){ S.task.now = ''; save(); render(); },
+  publish(){
+    const T = S.task;
+    const w = {id:'w' + Date.now(), seed:false, title:T.title.trim() || S.topic, text:T.text.trim(), keywords:T.keywords, photo:T.photo, now:T.now, art:T.art, elder:S.me.elder, youth:S.me.youth, topic:S.topic, date:today(), likes:0, comments:[]};
+    S.works.unshift(w); S.task = newTask(); ui.published = w.id; log('publish'); save(); render(true);
+  },
+  newtask(){ ui.published = ''; S.task = newTask(); save(); render(true); },
+  mood(el){ ui.mood = el.dataset.m; render(); },
+  reflect(){
+    const text = ui.reflectText.trim();
+    if (!ui.mood){ toast('請先選今天的心情'); return; }
+    if (!text){ toast('請寫一兩句話，或用說的'); return; }
+    stopDict();
+    S.reflections.push({who:S.me[S.role], role:S.role, mood:ui.mood, text, date:today()});
+    ui.reflectText = ''; ui.mood = ''; log('reflect'); save(); render(); toast('回顧已送出');
+  },
+  open(el){ ui.sheet = {type:'work', id:el.dataset.id}; ui.commentDraft = ''; ui.cmpPos = 50; ui.cmpMode = 'slide'; render(); },
+  close(){ stopDict(); ui.sheet = null; render(); },
+  present(el){ ui.sheet = {type:'present', id:el.dataset.id}; log('present'); save(); render(); },
+  back2work(){ ui.sheet = {type:'work', id:ui.sheet.id}; render(); },
+  likework(el){ const w = S.works.find(x => x.id === el.dataset.id); if (w){ w.likes++; log('like'); save(); render(); } },
+  comment(el){
+    const w = S.works.find(x => x.id === el.dataset.id), text = ui.commentDraft.trim();
+    if (!w) return; if (!text){ toast('請先寫下想說的話'); return; }
+    stopDict();
+    w.comments.push({who:S.me[S.role], text}); ui.commentDraft = ''; log('comment'); save(); render(); toast('留言已送出');
+  },
+  help(){ ui.sheet = {type:'help'}; render(); },
+  quickq(el){ sendChat(el.dataset.q); },
+  chatsend(){ sendChat(ui.chatDraft); },
+  speak(el){
+    let text = el.dataset.text || '';
+    if (el.dataset.from){ const f = document.getElementById(el.dataset.from); text = f ? f.value : ''; }
+    if (el.dataset.work){ const w = S.works.find(x => x.id === el.dataset.work); text = w ? w.title + '。' + w.text : ''; }
+    speak(text);
+  },
+  mic(el){
+    if (!dict) return;
+    if (dictState === 'listening'){ stopDict(); return; }
+    const target = document.getElementById(el.dataset.for);
+    if (!target) return;
+    dictTarget = {el:target, base:target.value};
+    dict.start().catch(e => {
+      dictTarget = null; paintMic();
+      if (e && e.code === 'not_granted'){ dict = null; refreshCaps(); toast('沒有開啟語音輸入，請改用打字'); }
+    });
+    log('voice');
+  },
+  checkin(){ S.checkin = true; log('checkin'); save(); render(); toast('報到成功'); },
+  cmpmode(el){ ui.cmpMode = el.dataset.mode; render(); },
+  copycsv(){
+    const text = csv();
+    const fail = () => { ui.csv = true; render(); };
+    try { navigator.clipboard.writeText(text).then(() => toast('已複製，可以貼到 Excel'), fail); } catch (e) { fail(); }
+  },
+  reset(){ ui.confirmReset = true; render(); },
+  resetno(){ ui.confirmReset = false; render(); },
+  resetyes(){ S = fresh(); Object.assign(ui, {sheet:null, chatDraft:'', reflectText:'', mood:'', commentDraft:'', published:'', confirmReset:false, csv:false}); save(); go('home'); toast('已回到剛打開的樣子'); }
+};
+
+document.addEventListener('click', ev => {
+  if (ev.target.id === 'sheet'){ ACT.close(); return; }
+  const el = ev.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = ACT[el.dataset.act];
+  if (fn) fn(el);
+});
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (el.dataset && el.dataset.bind){ setPath(el.dataset.bind, el.value); if (el.dataset.bind.indexOf('S.') === 0) save(); }
+  if (el.hasAttribute && el.hasAttribute('data-cmp')){
+    ui.cmpPos = +el.value;
+    const c = el.closest('.cmpwrap').querySelector('.cmp');
+    c.style.setProperty('--pos', el.value + '%'); c.style.setProperty('--n', el.value);
+  }
+});
+document.addEventListener('change', async ev => {
+  const el = ev.target;
+  if (!el.dataset || !el.dataset.file || !el.files || !el.files[0]) return;
+  try {
+    const url = await readImage(el.files[0]);
+    if (el.dataset.file === 'old'){ S.task.photo = url; S.task.sample = ''; S.task.now = ''; log('photo'); }
+    else S.task.now = url;
+    save(); render();
+  } catch (e) { toast('這張照片打不開，請換一張 JPG 或 PNG'); }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ui.sheet) ACT.close(); });
+window.addEventListener('hashchange', () => { stopDict(); ui.sheet = null; if (view() !== 'task') ui.published = ''; render(true); });
+
+render(true);
+})();
+</script>
+</body>
+</html>
