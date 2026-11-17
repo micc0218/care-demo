@@ -303,6 +303,10 @@ tbody td:first-child{white-space:nowrap;font-weight:700}
 }
 @media (min-width:1100px){
   html[data-role="elder"]{--cols:minmax(0,1.15fr) minmax(0,1fr);--page-wide:110rem;--stick:sticky;--side-photo:none;--side-steps:flex;--home-rows:minmax(min-content,1fr)}
+  /* Big screens: type grows with the window, so the page fills it instead of leaving empty space. */
+  html[data-role="elder"]{font-size:clamp(20px,min(1.3vw,2.55vh),30px)}
+  html[data-role="youth"]{font-size:clamp(16px,min(1.05vw,2.1vh),21px)}
+  .page.fit .cal-num{font-size:clamp(5rem,17vh,9rem)}
 }
 /* Laptop: the tab bar becomes a side rail. */
 @media (min-width:1024px){
@@ -326,6 +330,14 @@ tbody td:first-child{white-space:nowrap;font-weight:700}
   .page.fit .cal-do{gap:.5rem;padding:.6rem 1rem .8rem}
   .page.fit .yi{width:2.8rem;height:2.8rem;font-size:1.5rem}
   .page.fit .btn.go{min-height:3.2rem}
+}
+/* Tall wide screens: the four steps as four rows. */
+@media (min-width:1100px) and (min-height:760px){
+  .page.fit .steps{grid-template-columns:1fr}
+  .page.fit .steps a{grid-template-columns:auto 1fr auto;grid-template-rows:auto;align-items:center;gap:.9rem;padding:.6rem 1rem}
+  .page.fit .steps .letter{grid-area:auto}
+  .page.fit .steps .st-t{grid-area:auto;align-self:center}
+  .page.fit .steps a>:last-child{grid-area:auto;justify-self:end}
 }
 @media (prefers-reduced-motion:reduce){
   .toast{transition:none}
@@ -361,7 +373,7 @@ tbody td:first-child{white-space:nowrap;font-weight:700}
 <div class="app">
   <header class="top">
     <div class="seal" aria-hidden="true"><span>青</span><span>銀</span><span>共</span><span>創</span></div>
-    <div class="brand">CARE<small>雛形 v1.3</small></div>
+    <div class="brand">CARE<small>雛形 v1.3.2</small></div>
     <div class="seg" role="group" aria-label="切換版本">
       <button type="button" id="role-elder" data-act="role" data-role="elder" aria-pressed="true">樂齡版</button>
       <button type="button" id="role-youth" data-act="role" data-role="youth" aria-pressed="false">青年版</button>
@@ -520,7 +532,45 @@ cap('sample').then(s => {
   sampleFn = s; refreshCaps();
   try { if (typeof s.limits === 'function') s.limits().then(l => { sampleImages = !!(l && l.images); }).catch(() => {}); } catch (e) {}
 });
+/* Phones: Claude's dictation is only offered on computers, so fall back to the browser's own
+   speech recognition (Chrome on Android, Safari on iPhone). Same interface as the capability. */
+function nativeDictation(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  let rec = null, want = false, cb = {p(){}, f(){}, s(){}};
+  const open = (resolve, reject) => {
+    let started = false;
+    try {
+      rec = new SR();
+      rec.lang = 'zh-TW'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      rec.onstart = () => { started = true; cb.s({state:'listening'}); if (resolve) resolve(); };
+      rec.onresult = e => {
+        let live = '';
+        for (let i = e.resultIndex; i < e.results.length; i++){
+          const r = e.results[i];
+          if (r.isFinal) cb.f({text:r[0].transcript}); else live += r[0].transcript;
+        }
+        cb.p({text:live});
+      };
+      rec.onerror = e => {
+        const denied = e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture';
+        if (denied){ want = false; if (!started && reject) reject({code:'not_granted'}); }
+        else if (e.error === 'network'){ want = false; if (!started && reject) reject({code:'network'}); }
+      };
+      /* A pause ends a phone session; start again until the person presses the button. */
+      rec.onend = () => { rec = null; cb.p({text:''}); if (want){ open(null, null); } else cb.s({state:'idle', reason:'stopped'}); };
+      rec.start();
+    } catch (err) { rec = null; want = false; cb.s({state:'idle', reason:'failed'}); if (reject) reject({code:'failed'}); }
+  };
+  return {
+    native:true,
+    onPartial(f){ cb.p = f; }, onFinal(f){ cb.f = f; }, onState(f){ cb.s = f; },
+    start(){ want = true; return new Promise((res, rej) => open(res, rej)); },
+    stop(){ want = false; return new Promise(res => { if (!rec){ cb.s({state:'idle', reason:'stopped'}); return res(); } const r = rec; const done = r.onend; r.onend = () => { done(); res(); }; try { r.stop(); } catch (e) { res(); } }); }
+  };
+}
 cap('dictation').then(d => {
+  d = d || nativeDictation();
   if (!d) return;
   dict = d;
   try {
@@ -542,6 +592,15 @@ function paintMic(){
     const sp = b.querySelector('span'); if (sp) sp.textContent = on ? '說完了，按這裡' : '用說的';
   });
 }
+let zhVoice = null;
+function pickVoice(){
+  try {
+    const vs = speechSynthesis.getVoices() || [];
+    const norm = v => (v.lang || '').replace('_', '-').toLowerCase();
+    zhVoice = vs.find(v => norm(v) === 'zh-tw') || vs.find(v => norm(v) === 'zh-hk') || vs.find(v => norm(v).startsWith('zh')) || null;
+  } catch (e) {}
+}
+if ('speechSynthesis' in window){ try { pickVoice(); speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
 function speak(text){
   text = String(text || '').trim().slice(0, 1900);
   if (!text) return;
@@ -556,12 +615,20 @@ function speak(text){
   }
   if (!synthOK) return;
   try {
-    if (speechSynthesis.speaking){ speechSynthesis.cancel(); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-TW'; u.rate = S.role === 'elder' ? 0.85 : 1;
-    let started = false; u.onstart = () => { started = true; };
-    speechSynthesis.speak(u);
-    setTimeout(() => { if (!started && !speechSynthesis.speaking){ synthOK = false; refreshCaps(); toast('這個瀏覽器不能朗讀，請改用電腦版 Chrome 開啟'); } }, 2500);
+    if (speechSynthesis.speaking || speechSynthesis.pending){ speechSynthesis.cancel(); return; }
+    if (!zhVoice) pickVoice();
+    /* Short pieces: some phones stop reading after about 15 seconds of one long utterance. */
+    const parts = text.match(/[^。！？!?\n]+[。！？!?]*/g) || [text];
+    let started = false;
+    parts.forEach(t => {
+      const u = new SpeechSynthesisUtterance(t.trim());
+      u.lang = 'zh-TW'; if (zhVoice){ try { u.voice = zhVoice; } catch (e) {} }
+      u.rate = S.role === 'elder' ? 0.85 : 1;
+      u.onstart = () => { started = true; };
+      speechSynthesis.speak(u);
+    });
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    setTimeout(() => { if (!started && !speechSynthesis.speaking) toast(zhVoice ? '沒有聲音嗎？請把手機的靜音關掉、音量調大' : '這支手機沒有中文語音，請到設定下載中文語音'); }, 3000);
   } catch (e) { synthOK = false; refreshCaps(); }
 }
 async function askAI(prompt, opts){
@@ -854,14 +921,14 @@ function vResearch(){
     <p class="muted">對應計畫書的互動頻率與共同完成任務比例。目前只統計這台裝置上的操作。</p></section>
   <section class="card"><h2>這台裝置可用的功能</h2>
     <div class="row between"><span>AI 引導與故事整理</span>${state(!!sampleFn, '已連線', '未連線，改用內建題庫')}</div>
-    <div class="row between"><span>語音輸入</span>${state(!!dict, '可用', '不可用，改用打字')}</div>
-    <div class="row between"><span>朗讀</span>${state(!!tts || synthOK, '可用', '不可用')}</div>
-    <p class="muted">語音輸入與朗讀在電腦版 Chrome 最完整，手機上可能只能打字。</p></section>
+    <div class="row between"><span>語音輸入</span>${state(!!dict, dict && dict.native ? '可用（手機內建）' : '可用', '不可用，改用鍵盤麥克風')}</div>
+    <div class="row between"><span>朗讀</span>${state(!!tts || synthOK, tts ? '可用' : '可用（手機內建）', '不可用')}</div>
+    <p class="muted">手機請用網站網址開啟：iPhone 用 Safari，Android 用 Chrome。在 Claude App 裡開啟時，手機不能用語音。</p></section>
   </div><div class="col">
   <section class="card"><h2>這一版與正式版的差別</h2>
     <div class="tbl-wrap"><table><thead><tr><th>功能</th><th>這一版（雛形）</th><th>正式版</th></tr></thead><tbody>
       <tr><td>興趣配對</td><td>共同興趣計分</td><td>加入更多條件，視訪談結果調整</td></tr>
-      <tr><td>語音輸入</td><td>平台內建聽寫</td><td>Google Speech-to-Text</td></tr>
+      <tr><td>語音輸入</td><td>電腦用平台聽寫，手機用瀏覽器內建辨識</td><td>Google Speech-to-Text</td></tr>
       <tr><td>AI 引導、故事整理</td><td>已接上生成式 AI</td><td>改由自己的伺服器呼叫</td></tr>
       <tr><td>回憶圖像</td><td>簡單插畫示意</td><td>圖像生成 API</td></tr>
       <tr><td>時光對比</td><td>兩張照片滑動、疊影</td><td>手機鏡頭 AR 疊圖</td></tr>
@@ -1086,7 +1153,9 @@ const ACT = {
     dictTarget = {el:target, base:target.value};
     dict.start().catch(e => {
       dictTarget = null; paintMic();
-      if (e && e.code === 'not_granted'){ dict = null; refreshCaps(); toast('沒有開啟語音輸入，請改用打字'); }
+      if (e && e.code === 'not_granted'){ dict = null; refreshCaps(); toast('沒有麥克風權限，請改按鍵盤上的麥克風'); }
+      else if (e && e.code === 'network') toast('語音辨識要連上網路，請確認網路後再試');
+      else if (e && e.code === 'failed') toast('這裡不能用語音輸入，請改按鍵盤上的麥克風');
     });
     log('voice');
   },
